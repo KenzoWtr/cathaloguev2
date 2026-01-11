@@ -309,26 +309,31 @@
         let editingId = null;
 
         // Charger les données sauvegardées au démarrage
-        function loadProducts() {
-            const saved = localStorage.getItem('products');
-            if (saved) {
-                try {
-                    products = JSON.parse(saved);
+        async function loadProducts() {
+            try {
+                const result = await window.storage.get('shared_products', true);
+                if (result && result.value) {
+                    products = JSON.parse(result.value);
                     displayProducts();
                     updateStats();
-                } catch (e) {
-                    console.error('Erreur de chargement:', e);
-                    products = [];
                 }
+            } catch (e) {
+                console.log('Aucune donnée sauvegardée trouvée');
+                products = [];
             }
         }
 
-        // Sauvegarder les données
-        function saveProducts() {
-            localStorage.setItem('products', JSON.stringify(products));
+        // Sauvegarder les données pour tout le monde
+        async function saveProducts() {
+            try {
+                await window.storage.set('shared_products', JSON.stringify(products), true);
+            } catch (e) {
+                console.error('Erreur de sauvegarde:', e);
+                alert('Erreur lors de la sauvegarde des données');
+            }
         }
 
-        function addProduct() {
+        async function addProduct() {
             const name = document.getElementById('productName').value.trim();
             const price = parseFloat(document.getElementById('productPrice').value);
             const stock = parseInt(document.getElementById('productStock').value);
@@ -368,7 +373,7 @@
                 products.push(product);
             }
 
-            saveProducts();
+            await saveProducts();
             clearForm();
             displayProducts();
             updateStats();
@@ -389,7 +394,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function deleteProduct(id) {
+        async function deleteProduct(id) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) {
                 products = products.filter(p => p.id !== id);
                 if (editingId === id) {
@@ -397,7 +402,7 @@
                     clearForm();
                     document.getElementById('submitBtn').textContent = '➕ Ajouter l\'article';
                 }
-                saveProducts();
+                await saveProducts();
                 displayProducts();
                 updateStats();
             }
